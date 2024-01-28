@@ -1,7 +1,5 @@
 <template>
-  <div>
-
-    <div> 首页 </div>
+  <div id="bg">
   </div>
 </template>
 

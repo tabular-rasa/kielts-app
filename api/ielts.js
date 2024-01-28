@@ -21,13 +21,23 @@ export default {
       return res.data
     })
   },
-  getPaperDeatail:(data)=> {
+  getPaperDeatail: (data) => {
     return axios.request({
-      url: 'api/ielts/showPapers/' + data,
+      url: 'api/ielts/showPaper/' + data,
       data: data,
       method: 'post'
     }).then(res => {
       return res.data
     })
   },
+  getAvailableIdol: (data) => {
+    return axios.request({
+      url: 'api/ielts/showIdols/' + data,
+      data: data,
+      method: 'post'
+    }).then(res => {
+      return res.data
+    })
+
+  }
 }
