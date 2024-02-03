@@ -1,28 +1,34 @@
 <template>
-  <div style="background-color: rgb(218, 228, 243);;">
+  <div style="background-color: rgb(218, 228, 243);padding:0 32px;">
+    <!-- 建议顶部和底部，高度写成px固定  假设顶部高度为a，底部高度为b-->
+    <div id="player" style="height:100px;width:100%">
+      <!-- 调成自己合适的尺寸-->
+      <div style="width:70%">
+        <audio controls="controls" ref='audio' style=" width: 90%; margin:10px 30px;">
 
-    <div id="player">
-
-      <div style=" width: 70%; height: 10%;">
-        <audio controls="controls" style=" width: 100%; margin:10px 10px;">
-          <source :src="voice" type="audio/wav">
         </audio>
       </div>
-      <div style="margin:20px 20px;">
+      <div>
         <el-button id="form-button" type="primary" @click="submit">Submit</el-button>
         <el-button type="primary" @click="quit">Quit</el-button>
       </div>
     </div>
-    <el-scrollbar height="80vh" id="exam" width="80vh">
-      <form id="form-box">
-        <div v-for="paper in paperList">
-          <div v-html="format(paper)">
+    <!-- 32px为左右间距各32px-->
+    <div style="margin:10px 0;padding:0 32px;">
+
+
+      <!-- 假设顶部高度为a，底部高度为b ，此处150px为a+b-->
+      <el-scrollbar id="exam" style="height:calc(100vh - 170px);width:100%">
+        <form id="form-box">
+          <div v-for="paper in paperList">
+            <div v-html="format(paper)">
+            </div>
           </div>
-        </div>
-      </form>
-    </el-scrollbar>
+        </form>
+      </el-scrollbar>
+    </div>
+    <el-footer style=" width: 100%; height: 50px;background: rbg(218, 228, 243);"></el-footer>
   </div>
-  <el-footer style=" width: 70%; height: 15%;">Footer</el-footer>
 </template>
 
 <script>
@@ -32,11 +38,16 @@ export default {
     return {
       paperList: [],
       answerList: {},
-      voice: ''
+      request: {
+        paperId: 1,
+        idolId: 1
+      }
     }
   },
   created() {
-    console.log(this.$route.query.paperId)
+    this.request.paperId = this.$route.query.paperId
+    this.request.idolId = this.$route.query.idolId
+
     ielts.getPaperDeatail(this.$route.query.paperId)
       .then(
         res => {
@@ -46,15 +57,21 @@ export default {
             if (!(key in this.answerList)) {
               this.answerList[key] = [];
             }
+            for (var i = 0; i < paper.rightAnswer.length; i++) {
+              this.answerList[key].push(paper.rightAnswer[i]);
+            }
             // 将值添加到对应的数组中
-            this.answerList[key].push(paper.rightAnswer);
-
           })
         })
   },
   mounted() {
 
     this.submit()
+
+    ielts.getVoice(this.request)
+      .then(res => {
+        this.$refs.audio.src = res.data
+      })
   },
   methods: {
     format(data) {
@@ -110,46 +127,52 @@ export default {
           const [key, value] = pair.split('=');
           // 检查键是否已存在，如果不存在则创建一个新的数组
           if (!(key in data)) {
+            //单选多选填空各自对应一个key 
             data[key] = [];
           }
           // 将值添加到对应的数组中
-          data[key].push(value);
-
+          data[key].push(decodeURIComponent(value));
         });
-        // 总得分
+        // 总得分 
         var score = 0;
-        if (data) {
-          Object.keys(data).forEach(key => {
+        //如果单选多选题 不选 formdata是拿不到任何值的 所以要补充空题
+        Object.keys(this.answerList).forEach(key => {
+          if (!(key in data)) {
+            //单选多选填空各自对应一个key 
+            data[key] = [];
+          } else {
             var answersheet = data[key]
             const regex = /(?<=-)\d+/;
             var type = key.match(regex);
             var rightAnswer = this.answerList[key]
-            if (rightAnswer) {
-              rightAnswer = rightAnswer[0]
-              if (type != 2) {
-                for (var i = 0; i < rightAnswer.length; i++) {
-                  if (rightAnswer.indexOf(answersheet[i]) > -1) {
-                    score++;
-                  }
+            //如果是单选题 或者 多选题 
+            if (type != 2) {
+              for (var i = 0; i < answersheet.length; i++) {
+                if (rightAnswer.indexOf(answersheet[i]) > -1) {
+                  score++;
                 }
-              } else {
-                for (var i = 0; i < rightAnswer.length; i++) {
-                  var answerSplit = rightAnswer[i]
-                  if (answerSplit.indexOf(';') > -1) {
-                    answerSplit = answerSplit.split(';')
-                    if (answerSplit.indexOf(decodeURIComponent(answersheet[i])) > -1) {
-                      score++;
-                    }
-                  } else if (answerSplit === answersheet[i]) {
+              }
+            } else {
+              //如果是填空题 因为空有多个填法 需要拆开判断
+              for (var i = 0; i < answersheet.length; i++) {
+                var answerSplit = rightAnswer[i]
+                if (answerSplit.indexOf(';') > -1) {
+                  answerSplit = answerSplit.split(';')
+                  if (answerSplit.indexOf(answersheet[i]) > -1) {
                     score++;
                   }
+                } else if (answerSplit === answersheet[i]) {
+                  score++;
                 }
               }
             }
+          }
 
-          })
-        }
-        console.log(score)
+        })
+        //实际答题
+        this.$store.commit("setAnswerList", this.answerList)
+        this.$store.commit("setActualAnswer", data)
+        this.$router.push({ name: 'score', query: { score: score } })
       })
 
     },
@@ -163,8 +186,8 @@ export default {
 
 <style>
 #exam {
-  margin-left: 100px;
-  margin-right: 100px;
+  /* margin-left: 100px; */
+  /* margin-right: 100px; */
   border-width: 10px;
   border-style: solid;
   border-color: transparent;

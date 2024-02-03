@@ -38,6 +38,14 @@ export default {
     }).then(res => {
       return res.data
     })
-
+  },
+  getVoice: (data) => {
+    return axios.request({
+      url: 'api/ielts/getVoice',
+      data: data,
+      method: 'post'
+    }).then(res => {
+      return res.data
+    })
   }
 }

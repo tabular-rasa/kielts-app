@@ -15,10 +15,12 @@ module.exports = defineConfig({
       })
     ]
   },
+  publicPath: '/',
   devServer: {
     proxy: {
       '/api': {             // /api表示拦截以/api开头的请求
-        target: 'http://127.0.0.1:8080',    //跨域的域名
+        // target: 'http://124.220.156.224:8080', 
+        target: 'http://127.0.0.1:8080',   //跨域的域名
         changeOrigin: true, //是否开启跨域
         pathRewrite: {      //重写路径
           '^/api': ''       //把/api变为空字符
@@ -28,3 +30,5 @@ module.exports = defineConfig({
     port: 8060
   }
 })
+
+

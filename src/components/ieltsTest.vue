@@ -16,21 +16,24 @@
           </template>
         </el-table-column>
         <el-table-column prop="paperType" label="题目类型" width="180" />
-        <el-table-column prop="address" label="练习答题">
+        <el-table-column label="练习答题">
           <template v-slot="scope">
-            <el-button color="rgba(167, 218, 245, 1)" @click="btnClick(scope.row.paperId)" round>练习</el-button>
+            <el-button color="rgba(167, 218, 245, 1)" @click="btnClick(scope.row)" round>练习</el-button>
           </template>
         </el-table-column>
-        <el-table-column prop="address" label="支持爱豆声线">
-          <div class="block">
-            <el-button id="idol-img" type="primary" @click="handleClick(item)" circle>
-              <el-avatar src="http://s7wtfi5bw.hd-bkt.clouddn.com/mark.png" />
-            </el-button>
-          </div>
+        <el-table-column label="支持爱豆声线">
+          <template v-slot="scope">
+            <div class="block">
+              <el-button id="idol-img" type="primary" v-for="(val, index) in scope.row.idolDTOS"
+                @click="handleClick(item)" circle>
+                <el-avatar :src="val.idolImg" />
+              </el-button>
+            </div>
+          </template>
         </el-table-column>
       </el-table>
     </div>
-    <el-dialog v-model="dialogVisible" title="选择你的爱豆声线" width="30%" :before-close="handleClose">
+    <el-dialog v-model="dialogVisible" title="选择你的爱豆声线" width="30%">
       <div style="height: 100px;">
         <el-button color="rgba(167, 218, 245, 1)" id="idol-img" v-for="idol in idolList" type="primary"
           :class="radio == item ? 'yes' : ''" @click="handleClick(idol.idolId)" circle>
@@ -58,8 +61,8 @@ export default {
       dialogVisible: false,
       paperId: 1,
       idolId: 0,
-      radio: 1,
-      item: 0
+      radio: 1,//选中是1
+      item: 0//选择状态度量 item=0 没选 item=1 选了
     }
   },
 
@@ -70,18 +73,18 @@ export default {
         res => {
           this.ieltsList = res.data
         })
-
-
   },
 
   methods: {
 
-
-
     btnClick(data) {
-      this.paperId = data;
-      this.dialogVisible = true
-      this.showIdols(data)
+      if (data.idolDTOS.length == 0) {
+        this.$message.error('暂未开放，敬请期待')
+      } else {
+        this.dialogVisible = true
+        this.paperId = data.paperId
+        this.showIdols(data.paperId)
+      }
     },
     showTests(data) {
       ielts.getTestsTable(data)
@@ -91,17 +94,22 @@ export default {
           })
     },
     goExam() {
+      if (this.idolId == 0) {
+        this.$message.error('您尚未选择爱豆声线')
+      } else {
+        this.dialogVisible = false,
+          this.$router.push({ name: 'ieltsExam', query: { paperId: this.paperId, idolId: this.idolId } })
+      }
 
-      this.dialogVisible = false,
-        this.$router.push({ name: 'ieltsExam', params: { paperId: this.paperId } })
     },
     handleClick(data) {
       if (this.item == 1) {
         this.item = 0
+        this.idolId = 0
       } else {
+        this.idolId = data
         this.item = 1
       }
-      this.idolId = data
     },
     showIdols(data) {
       ielts.getAvailableIdol(data)

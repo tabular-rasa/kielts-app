@@ -7,7 +7,7 @@
           <div>回 归 广 告 位 招 租 </div>
         </div>
         <el-menu id="bg" ref="menuRef" router class="el-menu-demo" mode="horizontal" default-active="/">
-          <div id="bullet">welcome to k-ielts world</div>
+          <div id="bullet">welcome to k-what world</div>
           <el-menu-item index="/ielts" class="menu" style="margin-left: 100px;">I e l t s</el-menu-item>
           <el-menu-item index="/cet4" class="menu">C E T 4</el-menu-item>
           <el-menu-item index="/cet6" class="menu">C E T 6</el-menu-item>
